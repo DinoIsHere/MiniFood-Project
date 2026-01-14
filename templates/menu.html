@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.name }} Menu | Mini GoFood</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #fbbf24;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --slate: #64748b;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .restaurant-hero {
+            height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding-top: 80px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        .restaurant-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.4));
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 5%;
+        }
+
+        .menu-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
+        }
+
+        @media (max-width: 968px) {
+            .menu-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-details h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .item-details p {
+            font-size: 0.85rem;
+            color: var(--slate);
+        }
+
+        .item-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .price {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-add:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+        }
+
+        /* --- Cart Styling --- */
+        .cart-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .cart-items {
+            margin-bottom: 1.5rem;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px solid #f1f5f9;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--slate);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 4rem 5% 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="/" class="logo"><i class="fas fa-utensils"></i> Mini GoFood</a>
+        <nav>
+            <a href="/"
+                style="text-decoration: none; color: var(--slate); font-weight: 600; margin-right: 20px;">Home</a>
+            <a href="/restaurants" style="text-decoration: none; color: var(--slate); font-weight: 600;">Restaurants</a>
+        </nav>
+    </header>
+
+    {% set hero_img = '#0f172a' %}
+    {% if restaurant.name == 'Pizza Mania' %}
+    {% set hero_img = "url('/static/images/pizza.png')" %}
+    {% elif restaurant.name == 'Sushi Zen' %}
+    {% set hero_img = "url('/static/images/sushi.png')" %}
+    {% endif %}
+
+    <div class="restaurant-hero" style="background-image: {{ hero_img }}">
+        <div class="hero-content">
+            <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">{{ restaurant.name }}</h1>
+            <div style="display: flex; justify-content: center; gap: 1.5rem; font-weight: 600;">
+                <span><i class="fas fa-utensils"></i> {{ restaurant.category or 'Various' }}</span>
+                <span><i class="fas fa-star" style="color: var(--secondary);"></i> {{ restaurant.rating or '4.5'
+                    }}</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="container">
+        <div class="menu-layout">
+            <div class="menu-list">
+                <div class="card">
+                    <h2 style="margin-bottom: 2rem;"><i class="fas fa-list"></i> Today's Menu</h2>
+                    {% if restaurant.menu %}
+                    {% for item in restaurant.menu %}
+                    <div class="menu-item">
+                        <div class="item-details">
+                            <h3>{{ item.item }}</h3>
+                            <p>Delicious choice from our kitchen.</p>
+                        </div>
+                        <div class="item-actions">
+                            <div class="price">Rp {{ "{:,}".format(item.price) }}</div>
+                            <button class="btn-add" onclick="addToCart('{{ item.item }}', {{ item.price }})">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color: var(--slate); text-align: center; padding: 2rem;">No items listed available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="card" id="cart-card">
+                    <h2 class="cart-title"><i class="fas fa-shopping-cart"></i> Your Cart</h2>
+
+                    <div id="cart-container">
+                        <div class="cart-items" id="cart-items">
+                            <!-- Items will be injected here -->
+                        </div>
+
+                        <div class="cart-total">
+                            <span>Total</span>
+                            <span id="cart-total-value">Rp 0</span>
+                        </div>
+
+                        <form id="order-form" action="/order" method="POST">
+                            {% if session['user_id'] %}
+                            <div class="form-group">
+                                <label for="customer_name">Your Name</label>
+                                <input type="text" id="customer_name" name="customer_name"
+                                    value="{{ session['user_name'] }}" readonly
+                                    style="background: #f1f5f9; color: var(--slate);">
+                            </div>
+                            <input type="hidden" name="restaurant_name" value="{{ restaurant.name }}">
+                            <input type="hidden" id="cart_data" name="cart_data">
+
+                            <button type="submit" id="submit-order" class="btn-primary" disabled>
+                                Checkout Now <i class="fas fa-paper-plane"></i>
+                            </button>
+                            {% else %}
+                            <div
+                                style="text-align: center; padding: 1rem; background: #fff7ed; border-radius: 12px; border: 1px solid #ffedd5;">
+                                <p style="font-size: 0.85rem; color: #9a3412; margin-bottom: 1rem;">Please login to
+                                    complete your order.</p>
+                                <a href="/login" class="btn-primary" style="text-decoration: none;">Login to
+                                    Continue</a>
+                            </div>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <span style="font-size: 1.5rem; font-weight: 700; color: var(--primary);"><i class="fas fa-utensils"></i> Mini
+            GoFood</span>
+        <p style="color: var(--slate); margin-top: 1rem;">&copy; 2026 Mini GoFood Delivery. All rights reserved.</p>
+    </footer>
+
+    <script>
+        let cart = JSON.parse(localStorage.getItem('gofood_cart')) || [];
+        const restaurantName = "{{ restaurant.name }}";
+
+        // Logic: Clear cart if switching restaurants to avoid mixed orders
+        const savedRes = localStorage.getItem('gofood_res');
+        if (savedRes && savedRes !== restaurantName) {
+            cart = [];
+            localStorage.setItem('gofood_cart', JSON.stringify(cart));
+        }
+        localStorage.setItem('gofood_res', restaurantName);
+
+        function addToCart(name, price) {
+            const existing = cart.find(item => item.name === name);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ name, price, qty: 1 });
+            }
+            updateUI();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateUI();
+        }
+
+        function updateUI() {
+            localStorage.setItem('gofood_cart', JSON.stringify(cart));
+            const container = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total-value');
+            const cartDataInput = document.getElementById('cart_data');
+            const submitBtn = document.getElementById('submit-order');
+
+            container.innerHTML = '';
+            let total = 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="color: var(--slate); font-size: 0.85rem; text-align: center;">Cart is empty</p>';
+                submitBtn.disabled = true;
+            } else {
+                submitBtn.disabled = false;
+                cart.forEach((item, index) => {
+                    total += item.price * item.qty;
+                    const div = document.createElement('div');
+                    div.className = 'cart-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong>${item.name}</strong> x ${item.qty}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span>Rp ${(item.price * item.qty).toLocaleString()}</span>
+                            <i class="fas fa-times" style="color: #ef4444; cursor: pointer;" onclick="removeFromCart(${index})"></i>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            totalEl.innerText = `Rp ${total.toLocaleString()}`;
+            cartDataInput.value = JSON.stringify(cart);
+        }
+
+        // Initialize UI on load
+        updateUI();
+
+        // Clear cart after successful form submission
+        document.getElementById('order-form').onsubmit = function () {
+            setTimeout(() => {
+                localStorage.removeItem('gofood_cart');
+            }, 100);
+        };
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard | Mini GoFood</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #fbbf24;
+            --dark: #0f172a;
+            --light: #f1f5f9;
+            --slate: #64748b;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--light);
+            margin: 0;
+        }
+
+        header {
+            background: var(--dark);
+            color: white;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .driver-info {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            border-left: 5px solid var(--primary);
+            transition: 0.3s;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .btn-action {
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-accept {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-update {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        .btn-complete {
+            background: var(--dark);
+            color: white;
+        }
+
+        .btn-switch {
+            background: #e2e8f0;
+            color: var(--slate);
+            font-size: 0.8rem;
+            text-decoration: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <a href="/" style="color: white; text-decoration: none; font-weight: 700; font-size: 1.2rem;"><i
+                class="fas fa-utensils"></i> Driver Center</a>
+        <div style="font-size: 0.9rem; opacity: 0.8;">Simulation Mode</div>
+    </header>
+
+    <div class="container">
+        <div class="driver-info">
+            <div>
+                <p style="color: var(--slate); font-size: 0.85rem; margin-bottom: 0.2rem;">Active Driver</p>
+                <h2 style="margin: 0;">{{ driver_name }}</h2>
+            </div>
+            <div style="text-align: right;">
+                <p style="font-size: 0.85rem; color: var(--slate); margin-bottom: 0.5rem;">Switch Profile:</p>
+                <div style="display: flex; gap: 0.5rem;">
+                    {% for d in all_drivers %}
+                    <a href="/driver/switch/{{ d.name }}"
+                        class="btn-switch {% if d.name == driver_name %}active{% endif %}"
+                        style="{% if d.name == driver_name %}background: var(--primary); color: white;{% endif %}">{{
+                        d.name.split(' ')[0] }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-tasks"></i> Order Queue
+        </h3>
+
+        <div id="orders-list">
+            <!-- Orders dynamic load -->
+        </div>
+    </div>
+
+    <script>
+        const currentDriver = "{{ driver_name }}";
+
+        async function updateStatus(orderId, status) {
+            await fetch(`/api/driver/order/${orderId}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            fetchOrders();
+        }
+
+        async function fetchOrders() {
+            const res = await fetch('/api/driver/orders');
+            const orders = await res.json();
+            const list = document.getElementById('orders-list');
+
+            if (orders.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--slate);">No orders available.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            orders.forEach(o => {
+                const isAssigned = o.driver === currentDriver;
+                const isFinding = o.status === "Finding Driver";
+
+                let actionHtml = '';
+                if (isFinding) {
+                    actionHtml = `<button class="btn-action btn-accept" onclick="updateStatus('${o._id}', 'Preparing')">Accept Order</button>`;
+                } else if (isAssigned) {
+                    if (o.status === "Preparing") {
+                        actionHtml = `<button class="btn-action btn-update" onclick="updateStatus('${o._id}', 'Out for Delivery')">Pick Up Order</button>`;
+                    } else if (o.status === "Out for Delivery") {
+                        actionHtml = `<button class="btn-action btn-complete" onclick="updateStatus('${o._id}', 'Delivered')">Mark as Delivered</button>`;
+                    } else if (o.status === "Delivered") {
+                        actionHtml = `<span style="color: var(--primary); font-weight: 600;"><i class="fas fa-check-circle"></i> Completed</span>`;
+                    }
+                } else {
+                    actionHtml = `<span style="color: var(--slate); font-size: 0.85rem;">Assigned to ${o.driver}</span>`;
+                }
+
+                const card = `
+                    <div class="order-card" style="border-left-color: ${isAssigned ? 'var(--primary)' : '#e2e8f0'}">
+                        <div class="order-header">
+                            <div>
+                                <strong style="display: block; font-size: 1.1rem;">${o.restaurant}</strong>
+                                <span style="font-size: 0.85rem; color: var(--slate);">To: ${o.customer}</span>
+                            </div>
+                            <span class="status-badge ${o.status === 'Preparing' ? 'status-pending' : 'status-active'}">${o.status}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
+                            <span style="font-weight: 700;">Rp ${o.total_price ? o.total_price.toLocaleString() : '0'}</span>
+                            ${actionHtml}
+                        </div>
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        setInterval(fetchOrders, 3000);
+        fetchOrders();
+    </script>
+</body>
+
+</html>
