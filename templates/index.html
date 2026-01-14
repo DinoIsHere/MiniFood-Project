@@ -424,7 +424,8 @@
             <!-- Order Form -->
             <div class="card">
                 <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Quick Order</h2>
-                <form action="/order" method="POST">
+                <form action="/checkout" method="POST">
+                    <input type="hidden" name="cart_data" value='[{"name": "Quick Meal", "price": 50000, "qty": 1}]'>
                     <div class="form-group">
                         <label for="customer_name">Your Name</label>
                         <input type="text" id="customer_name" name="customer_name"
@@ -439,7 +440,7 @@
                         </select>
                     </div>
                     <button type="submit" class="btn-primary">
-                        Confirm Order <i class="fas fa-arrow-right"></i>
+                        Review Order <i class="fas fa-arrow-right"></i>
                     </button>
                 </form>
             </div>
@@ -455,6 +456,7 @@
                                 <th>Restaurant</th>
                                 <th>Driver</th>
                                 <th>Status</th>
+                                <th>Receipt</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -476,10 +478,16 @@
                                     </div>
                                 </td>
                                 <td><span class="badge badge-info">{{ o.status }}</span></td>
+                                <td>
+                                    <a href="/order/receipt/{{ o._id }}"
+                                        style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 600;">
+                                        <i class="fas fa-file-invoice"></i> View
+                                    </a>
+                                </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="4" style="text-align: center; color: var(--slate); padding: 3rem;">
+                                <td colspan="5" style="text-align: center; color: var(--slate); padding: 3rem;">
                                     <i class="fas fa-receipt fa-2x"
                                         style="display: block; margin-bottom: 1rem; opacity: 0.5;"></i>
                                     No active orders yet.
@@ -500,10 +508,14 @@
             <a href="#"><i class="fab fa-twitter"></i></a>
             <a href="#"><i class="fab fa-facebook"></i></a>
         </div>
-        <div style="margin-top: 2rem;">
+        <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
             <a href="/driver"
                 style="color: var(--slate); text-decoration: none; font-size: 0.8rem; border: 1px solid var(--slate); padding: 0.4rem 1rem; border-radius: 50px;">
                 <i class="fas fa-bicycle"></i> Switch to Driver Mode
+            </a>
+            <a href="/restaurant/dashboard"
+                style="color: var(--slate); text-decoration: none; font-size: 0.8rem; border: 1px solid var(--slate); padding: 0.4rem 1rem; border-radius: 50px;">
+                <i class="fas fa-store"></i> Restaurant Dashboard
             </a>
         </div>
         <p class="copyright" style="margin-top: 1rem;">&copy; 2026 Mini GoFood Delivery. All rights reserved.</p>
@@ -520,7 +532,7 @@
                 if (orders.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="4" style="text-align: center; color: var(--slate); padding: 3rem;">
+                            <td colspan="5" style="text-align: center; color: var(--slate); padding: 3rem;">
                                 <i class="fas fa-receipt fa-2x" style="display: block; margin-bottom: 1rem; opacity: 0.5;"></i>
                                 No active orders yet.
                             </td>
@@ -546,6 +558,11 @@
                                 </div>
                             </td>
                             <td><span class="badge ${o.status === 'Delivered' ? 'bg-success' : 'badge-info'}">${o.status}</span></td>
+                            <td>
+                                <a href="/order/receipt/${o._id}" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 600;">
+                                    <i class="fas fa-file-invoice"></i> View
+                                </a>
+                            </td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', row);

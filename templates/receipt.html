@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt #{{ order._id|string|truncate(8, True, '') }} | Mini GoFood</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #10b981;
+            --dark: #0f172a;
+            --slate: #64748b;
+            --light: #f8fafc;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .receipt-card {
+            background: white;
+            width: 100%;
+            max-width: 450px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .receipt-header {
+            background: var(--primary);
+            color: white;
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+
+        .receipt-header i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .receipt-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .receipt-body {
+            padding: 2rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 1rem;
+        }
+
+        .info-label {
+            color: var(--slate);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .items-list {
+            margin-top: 2rem;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .item-name {
+            color: var(--dark);
+        }
+
+        .item-price {
+            font-weight: 600;
+        }
+
+        .total-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-label {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .footer-btns {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            border: 2px solid #e2e8f0;
+            color: var(--slate);
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: var(--slate);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        @media print {
+            .footer-btns {
+                display: none;
+            }
+
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .receipt-card {
+                box-shadow: none;
+                border: 1px solid #eee;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="receipt-card">
+        <div class="receipt-header">
+            <i class="fas fa-check-circle"></i>
+            <h1>Payment Successful</h1>
+            <p style="opacity: 0.8; margin-top: 0.5rem; font-size: 0.9rem;">Order #{{ order._id|string|truncate(8, True,
+                '') }}</p>
+        </div>
+
+        <div class="receipt-body">
+            <div class="info-row">
+                <div class="info-label">Customer</div>
+                <div class="info-value">{{ order.customer }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Restaurant</div>
+                <div class="info-value">{{ order.restaurant }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Status</div>
+                <div class="info-value"><span style="color: var(--primary)">{{ order.status }}</span></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Address</div>
+                <div class="info-value" style="font-size: 0.85rem;">{{ order.address }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Payment</div>
+                <div class="info-value">{{ order.payment_method }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Delivery</div>
+                <div class="info-value">{{ order.delivery_type }}</div>
+            </div>
+
+            <div class="items-list">
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--slate);">Order Summary</h3>
+                {% if order.items %}
+                {% for item in order['items'] %}
+                <div class="item">
+                    <span class="item-name">{{ item.qty }}x {{ item.name }}</span>
+                    <span class="item-price">Rp {{ "{:,.0f}".format(item.price * item.qty) }}</span>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="font-size: 0.9rem; color: var(--slate);">Generic Order</p>
+                {% endif %}
+            </div>
+
+            <div style="margin-top: 1.5rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem;">
+                <div class="summary-item"
+                    style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--slate);">
+                    <span>Subtotal</span>
+                    <span>Rp {{ "{:,.0f}".format(order.total_items_price or order.total_price) }}</span>
+                </div>
+                {% if order.discount %}
+                <div class="summary-item"
+                    style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem; color: #ef4444;">
+                    <span>Discount</span>
+                    <span>-Rp {{ "{:,.0f}".format(order.discount) }}</span>
+                </div>
+                {% endif %}
+                {% if order.delivery_fee %}
+                <div class="summary-item"
+                    style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--slate);">
+                    <span>Delivery Fee</span>
+                    <span>Rp {{ "{:,.0f}".format(order.delivery_fee) }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="total-section">
+                <div class="total-label">Total Paid</div>
+                <div class="total-amount">Rp {{ "{:,.0f}".format(order.total_price) }}</div>
+            </div>
+
+            <div class="footer-btns">
+                <a href="/" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
+                <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print
+                    Receipt</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -53,6 +53,8 @@ def signup():
         email = request.form.get('email')
         password = request.form.get('password')
         
+        role = request.form.get('role', 'customer')
+        
         # Check if user exists
         if db.users.find_one({"email": email}):
             return render_template('signup.html', error="Email already registered")
@@ -61,7 +63,8 @@ def signup():
         db.users.insert_one({
             "name": name,
             "email": email,
-            "password": hashed_pw
+            "password": hashed_pw,
+            "role": role
         })
         return redirect(url_for('login'))
     return render_template('signup.html')
@@ -76,6 +79,20 @@ def login():
         if user and bcrypt.check_password_hash(user['password'], password):
             session['user_id'] = str(user['_id'])
             session['user_name'] = user['name']
+            
+            # Detect role from database
+            role = user.get('role', 'customer')
+            session['role'] = role
+            
+            if role == 'driver':
+                driver = db.drivers.find_one()
+                session['driver_name'] = driver['name'] if driver else user['name']
+                return redirect(url_for('driver_dashboard'))
+            elif role == 'restaurant':
+                res = db.restaurants.find_one()
+                session['res_name'] = res['name'] if res else "Bellissimo Pizza"
+                return redirect(url_for('restaurant_dashboard'))
+                
             return redirect(url_for('index'))
         return render_template('login.html', error="Invalid email or password")
     return render_template('login.html')
@@ -102,6 +119,33 @@ def driver_dashboard():
 def switch_driver(name):
     session['driver_name'] = name
     return redirect(url_for('driver_dashboard'))
+
+# --- RESTAURANT DASHBOARD ---
+
+@app.route('/restaurant/dashboard')
+def restaurant_dashboard():
+    # Demo hack: default to the first restaurant if not "logged in" as restaurant
+    if 'res_name' not in session:
+        res = db.restaurants.find_one()
+        session['res_name'] = res['name'] if res else "Bellissimo Pizza"
+        
+    current_res = session['res_name']
+    available_res = list(db.restaurants.find())
+    return render_template('restaurant_dashboard.html', res_name=current_res, all_restaurants=available_res)
+
+@app.route('/restaurant/switch-res/<name>')
+def switch_restaurant(name):
+    session['res_name'] = name
+    return redirect(url_for('restaurant_dashboard'))
+
+@app.route('/api/restaurant/orders')
+def restaurant_orders_api():
+    res_name = session.get('res_name', 'Bellissimo Pizza')
+    orders = list(db.orders.find({"restaurant": res_name}).sort("_id", -1))
+    
+    for o in orders:
+        o['_id'] = str(o['_id'])
+    return jsonify(orders)
 
 @app.route('/api/driver/orders')
 def driver_orders_api():
@@ -142,6 +186,28 @@ def my_orders_api():
         o['_id'] = str(o['_id'])
     return jsonify(orders)
 
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    restaurant_name = request.form.get('restaurant_name')
+    cart_data_raw = request.form.get('cart_data')
+    
+    import json
+    try:
+        cart_items = json.loads(cart_data_raw) if cart_data_raw else []
+    except:
+        cart_items = []
+        
+    total_price = sum(item['price'] * item['qty'] for item in cart_items)
+    
+    return render_template('checkout.html', 
+                          restaurant_name=restaurant_name, 
+                          cart_items=cart_items, 
+                          total_price=total_price,
+                          cart_data_raw=cart_data_raw)
+
 @app.route('/order', methods=['POST'])
 def place_order():
     if 'user_id' not in session:
@@ -151,6 +217,12 @@ def place_order():
     restaurant_name = request.form.get('restaurant_name')
     cart_data_raw = request.form.get('cart_data')
     
+    # New fields from checkout
+    address = request.form.get('address', 'Standard Address')
+    payment_method = request.form.get('payment_method', 'Cash')
+    delivery_type = request.form.get('delivery_type', 'Standard')
+    promo_code = request.form.get('promo_code', '')
+    
     import json
     try:
         cart_items = json.loads(cart_data_raw) if cart_data_raw else []
@@ -159,6 +231,18 @@ def place_order():
 
     # Calculate total price
     total_price = sum(item['price'] * item['qty'] for item in cart_items)
+    
+    # Calculate discount (simple demo logic)
+    discount = 0
+    if promo_code.upper() == 'GOFOOD50':
+        discount = total_price * 0.5
+    elif promo_code.upper() == 'LUCKY10':
+        discount = total_price * 0.1
+        
+    # Add delivery fee
+    delivery_fee = 15000 if delivery_type == 'Priority' else 5000
+    
+    final_total = total_price - discount + delivery_fee
 
     # Pick the first available driver
     driver = db.drivers.find_one({"is_available": True})
@@ -170,17 +254,39 @@ def place_order():
         "customer": customer_name,
         "restaurant": restaurant_name,
         "items": cart_items,
-        "total_price": total_price,
+        "total_items_price": total_price,
+        "discount": discount,
+        "delivery_fee": delivery_fee,
+        "total_price": final_total,
+        "address": address,
+        "payment_method": payment_method,
+        "delivery_type": delivery_type,
         "driver": driver_name,
-        "status": "Preparing" if driver else "Finding Driver"
+        "status": "Preparing" if driver else "Finding Driver",
+        "timestamp": os.getenv('CURRENT_TIME', '2026-01-15 06:33') # Optional: Tracking time
     }
-    db.orders.insert_one(order_doc)
+    inserted = db.orders.insert_one(order_doc)
 
     if driver:
         # Set driver to busy
         db.drivers.update_one({"_id": driver["_id"]}, {"$set": {"is_available": False}})
     
-    return redirect(url_for('index'))
+    return redirect(url_for('order_receipt', order_id=str(inserted.inserted_id)))
+
+@app.route('/order/receipt/<order_id>')
+def order_receipt(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    order = db.orders.find_one({"_id": ObjectId(order_id)})
+    if not order:
+        return "Order not found", 404
+        
+    # Security check: ensure the order belongs to the user
+    if order['user_id'] != session['user_id']:
+        return "Unauthorized", 403
+        
+    return render_template('receipt.html', order=order)
 
 if __name__ == '__main__':
     app.run(debug=True)
