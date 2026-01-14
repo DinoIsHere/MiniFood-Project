@@ -17,6 +17,10 @@
             --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Outfit', sans-serif;
             background-color: var(--light);
@@ -69,6 +73,16 @@
             border-radius: 12px;
             border: 2px solid #e2e8f0;
             font-family: inherit;
+            font-size: 1rem;
+            color: var(--dark);
+            background-color: white;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
         }
 
         .btn-primary {
