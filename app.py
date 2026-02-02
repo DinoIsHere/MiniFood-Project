@@ -32,25 +32,33 @@ def index():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        # Check if user already exists
-        if db.users.find_one({"email": email}):
-            return render_template('signup.html', error="Email already registered")
-        
-        # Hash password and create user
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        user_doc = {
-            "name": name,
-            "email": email,
-            "password": hashed_password,
-            "role": "customer"
-        }
-        db.users.insert_one(user_doc)
-        
-        return redirect(url_for('login'))
+        try:
+            name = request.form.get('name')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            
+            # Validate inputs
+            if not all([name, email, password]):
+                return render_template('signup.html', error="All fields are required")
+            
+            # Check if user already exists
+            if db.users.find_one({"email": email}):
+                return render_template('signup.html', error="Email already registered")
+            
+            # Hash password and create user
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            user_doc = {
+                "name": name,
+                "email": email,
+                "password": hashed_password,
+                "role": "customer"
+            }
+            db.users.insert_one(user_doc)
+            
+            return redirect(url_for('login'))
+        except Exception as e:
+            print(f"Signup error: {e}")  # This will show in your terminal
+            return render_template('signup.html', error=f"Error: {str(e)}")
     return render_template('signup.html')
 
 
