@@ -29,6 +29,32 @@ def index():
 
 # --- AUTH ROUTES ---
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        # Check if user already exists
+        if db.users.find_one({"email": email}):
+            return render_template('signup.html', error="Email already registered")
+        
+        # Hash password and create user
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        user_doc = {
+            "name": name,
+            "email": email,
+            "password": hashed_password,
+            "role": "customer"
+        }
+        db.users.insert_one(user_doc)
+        
+        return redirect(url_for('login'))
+    return render_template('signup.html')
+
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
